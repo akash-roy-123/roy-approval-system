@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Roy Review System™ — The Official People-Rating Experience</title>
+  <meta name="description" content="Finally. A scientifically rigorous system to determine if Roy is, in fact, a good person.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Animated background gradient -->
+  <div class="bg-gradient" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-icon">👑</span>
+      <h1>Roy Review System<sup>™</sup></h1>
+      <p class="tagline">Est. Yesterday • Definitely Legitimate</p>
+    </div>
+    <div class="approval-meter-wrapper">
+      <p class="meter-label">LIVE APPROVAL METER</p>
+      <div class="approval-meter">
+        <div class="meter-track">
+          <div class="meter-fill" id="approvalMeter" style="width: 47%;"></div>
+        </div>
+        <span class="meter-value" id="approvalValue">47%</span>
+      </div>
+      <p class="meter-sublabel">Real humans definitely voted</p>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Hero section with the core question -->
+    <section class="hero" aria-labelledby="main-question">
+      <h2 id="main-question">The Big Question</h2>
+      <p class="question-text">Do you think Roy is a good person?</p>
+
+      <div class="button-container" id="buttonContainer">
+        <button type="button" class="btn btn-yes" id="yesBtn" aria-label="Yes, Roy is a good person">
+          Yes
+        </button>
+        <button type="button" class="btn btn-no" id="noBtn" aria-label="No">
+          No
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Roy Review System™ — Making the world a slightly more judgmental place since yesterday.</p>
+    <p class="footer-legal">Results may vary. Roy's feelings are not guaranteed.</p>
+  </footer>
+
+  <!-- Success overlay - last in DOM so it stacks above footer when shown -->
+  <div class="success-overlay" id="successOverlay" aria-live="polite" aria-hidden="true">
+    <div class="success-content">
+      <div class="success-icon" id="successIcon">🎉</div>
+      <h2 class="success-title" id="successTitle">Correct Answer!</h2>
+      <p class="success-message" id="successMessage">You have excellent judgment. Roy appreciates you.</p>
+      <button type="button" class="btn btn-close-success" id="closeSuccessBtn" aria-label="Close and continue">Continue</button>
+      <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+    </div>
+  </div>
+
+  <!-- Dialog at body level to avoid positioning context issues from parent sections -->
+  <dialog class="confirm-modal" id="confirmModal" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <h3 id="modal-title">Wait...</h3>
+      <p class="modal-message" id="modalMessage">Are you sure?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-yes btn-small" id="modalYes">Actually, Yes</button>
+        <button type="button" class="btn btn-no btn-small" id="modalNo">Still No</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

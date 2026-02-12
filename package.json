@@ -1,0 +1,13 @@
+{
+  "name": "roy-review-system",
+  "version": "1.0.0",
+  "description": "The Official Roy Review System™ — Do you think Roy is a good person?",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "npx serve . -l 3000"
+  },
+  "keywords": ["roy", "review", "feedback"],
+  "author": "",
+  "license": "MIT"
+}
