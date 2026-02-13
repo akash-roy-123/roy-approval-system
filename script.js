@@ -4,14 +4,7 @@
  * ESCALATING "NO" BEHAVIOR:
  * When users click "No," we don't accept it immediately. Instead, we trigger
  * a series of progressively more persuasive/funny confirmation dialogs.
- * As they persist, we also apply UX "frustration" tactics:
- * - Shrink the No button
- * - Make the Yes button grow and pulse
- * - Move the No button to random positions (it "runs away")
- * - More intense modal messages
- *
- * Eventually the user is nudged (or worn down) into selecting Yes,
- * at which point we trigger celebration.
+ * The user is nudged (or worn down) into selecting Yes, at which point we trigger celebration.
  */
 
 (function () {
@@ -30,12 +23,50 @@
   const successIcon = document.getElementById('successIcon');
   const closeSuccessBtn = document.getElementById('closeSuccessBtn');
   const confettiCanvas = document.getElementById('confettiCanvas');
-  const approvalMeter = document.getElementById('approvalMeter');
-  const approvalValue = document.getElementById('approvalValue');
+  const yesCountEl = document.getElementById('yesCount');
+  const resetYesCountBtn = document.getElementById('resetYesCount');
+
+  // ========== Storage key for persistent Yes count ==========
+  const YES_COUNT_KEY = 'roy-review-yes-count';
 
   // ========== Escalation State ==========
   let noClickCount = 0;
-  let yesClickCount = 0;
+  let yesClickCount = loadYesCount();
+  let confettiAnimationId = null;
+  let prefersReducedMotion = false;
+
+  function loadYesCount() {
+    try {
+      const n = parseInt(localStorage.getItem(YES_COUNT_KEY), 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function saveYesCount() {
+    try {
+      localStorage.setItem(YES_COUNT_KEY, String(yesClickCount));
+    } catch (e) {}
+  }
+
+  function updateYesCounterDisplay() {
+    if (yesCountEl) yesCountEl.textContent = String(yesClickCount);
+  }
+
+  function resetYesCounter() {
+    yesClickCount = 0;
+    try {
+      localStorage.removeItem(YES_COUNT_KEY);
+    } catch (e) {}
+    updateYesCounterDisplay();
+  }
+
+  // Repeat Yes: messages after first full loop
+  const SUCCESS_MESSAGES_REPEAT = [
+    { title: 'Still Correct!', message: "Roy is still pleased. You're on a roll.", icon: '😌' },
+    { title: 'Again!', message: 'The approval meter nods in approval. Again.', icon: '👍' },
+  ];
 
   // Different success message for each Yes click (loops when exhausted)
   const SUCCESS_MESSAGES = [
@@ -71,6 +102,8 @@
 
   // ========== Initialize ==========
   function init() {
+    prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     yesBtn.addEventListener('click', handleYesClick);
     noBtn.addEventListener('click', handleNoClick);
     modalYes.addEventListener('click', handleModalYes);
@@ -80,57 +113,41 @@
     confirmModal.addEventListener('cancel', (e) => e.preventDefault());
 
     closeSuccessBtn.addEventListener('click', hideSuccessOverlay);
+    if (resetYesCountBtn) resetYesCountBtn.addEventListener('click', resetYesCounter);
 
-    // Optional: Preload any sound (we use Web Audio for lightweight beeps)
     initAudio();
+    updateYesCounterDisplay();
   }
 
   // ========== YES Button Handler ==========
   function handleYesClick() {
-    // Pick a different message for each Yes click (loops through array)
-    const msgIndex = yesClickCount % SUCCESS_MESSAGES.length;
-    const msg = SUCCESS_MESSAGES[msgIndex];
+    const baseLength = SUCCESS_MESSAGES.length;
+    const repeatLength = SUCCESS_MESSAGES_REPEAT.length;
+    let msg;
+    if (yesClickCount < baseLength) {
+      msg = SUCCESS_MESSAGES[yesClickCount];
+    } else {
+      msg = SUCCESS_MESSAGES_REPEAT[(yesClickCount - baseLength) % repeatLength];
+    }
     yesClickCount++;
 
     successTitle.textContent = msg.title;
     successMessage.textContent = msg.message;
     successIcon.textContent = msg.icon;
 
-    spikeApprovalMeter();
+    saveYesCount();
+    updateYesCounterDisplay();
     showSuccessOverlay();
     launchConfetti();
     playSuccessSound();
   }
 
   // ========== NO Button Handler — Core Escalation Logic ==========
-  function handleNoClick(e) {
+  function handleNoClick() {
     noClickCount++;
-
-    // Always show modal; messages loop infinitely so it never gets stuck
     const messageIndex = (noClickCount - 1) % ESCALATING_MESSAGES.length;
     modalMessage.textContent = ESCALATING_MESSAGES[messageIndex];
     confirmModal.showModal();
-
-    // Apply progressive UX "frustration" based on click count
-    applyEscalatingBehavior();
-  }
-
-  /**
-   * Applies visual/UX changes to make choosing "No" harder.
-   * - Early: Just the modal
-   * - Mid: Shrink No, grow Yes
-   * (Buttons stay stable — no moving/repositioning)
-   */
-  function applyEscalatingBehavior() {
-    // From click 3 onward: shrink No button
-    if (noClickCount >= 3) {
-      noBtn.classList.add('shrinking');
-    }
-
-    // From click 5 onward: grow and pulse Yes button
-    if (noClickCount >= 5) {
-      yesBtn.classList.add('growing');
-    }
   }
 
   // ========== Modal Handlers ==========
@@ -140,10 +157,8 @@
   }
 
   function handleModalNo() {
-    // User doubled down on No — increment count, loop to next message
     noClickCount++;
-    applyEscalatingBehavior();
-
+    playSadSound();
     const messageIndex = (noClickCount - 1) % ESCALATING_MESSAGES.length;
     modalMessage.textContent = ESCALATING_MESSAGES[messageIndex];
   }
@@ -152,26 +167,45 @@
   function showSuccessOverlay() {
     successOverlay.setAttribute('aria-hidden', 'false');
     successOverlay.classList.add('active');
+    // Move focus so keyboard users aren't trapped
+    closeSuccessBtn.focus();
   }
 
   function hideSuccessOverlay() {
     successOverlay.setAttribute('aria-hidden', 'true');
     successOverlay.classList.remove('active');
+    if (confettiAnimationId != null) {
+      cancelAnimationFrame(confettiAnimationId);
+      confettiAnimationId = null;
+    }
+    const ctx = confettiCanvas.getContext('2d');
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    yesBtn.focus();
   }
 
   function launchConfetti() {
-    const ctx = confettiCanvas.getContext('2d');
-    confettiCanvas.width = window.innerWidth;
-    confettiCanvas.height = window.innerHeight;
+    if (prefersReducedMotion) return;
 
-    const colors = ['#5b9a8b', '#7eb8a8', '#f4c430', '#e8a87c', '#9dc6d8'];
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    confettiCanvas.width = w * dpr;
+    confettiCanvas.height = h * dpr;
+    confettiCanvas.style.width = w + 'px';
+    confettiCanvas.style.height = h + 'px';
+    const ctx = confettiCanvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const colors = ['#2d9d8a', '#3dbda8', '#2e8b6e', '#b8923d', '#c45c5c'];
     const particles = [];
     const particleCount = 80;
+    const cx = w / 2;
+    const ch = h / 2;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
-        x: confettiCanvas.width / 2,
-        y: confettiCanvas.height / 2,
+        x: cx,
+        y: ch,
         vx: (Math.random() - 0.5) * 12,
         vy: (Math.random() - 0.5) * 12 - 4,
         color: colors[Math.floor(Math.random() * colors.length)],
@@ -182,12 +216,12 @@
     }
 
     function animate() {
-      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      ctx.clearRect(0, 0, w, h);
 
       particles.forEach((p) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.3; // gravity
+        p.vy += 0.3;
         p.rotation += p.rotationSpeed;
 
         ctx.save();
@@ -199,37 +233,16 @@
       });
 
       const allOffScreen = particles.every(
-        (p) => p.y > confettiCanvas.height + 20 || p.x < -20 || p.x > confettiCanvas.width + 20
+        (p) => p.y > h + 20 || p.x < -20 || p.x > w + 20
       );
-
       if (!allOffScreen) {
-        requestAnimationFrame(animate);
+        confettiAnimationId = requestAnimationFrame(animate);
+      } else {
+        confettiAnimationId = null;
       }
     }
 
-    animate();
-  }
-
-  // ========== Approval Meter ==========
-  function spikeApprovalMeter() {
-    const currentWidth = parseFloat(approvalMeter.style.width) || 47;
-    const targetWidth = 99;
-
-    let width = currentWidth;
-    const step = () => {
-      width += (targetWidth - width) * 0.15;
-      approvalMeter.style.width = `${width}%`;
-      approvalValue.textContent = `${Math.round(width)}%`;
-
-      if (width < targetWidth - 0.5) {
-        requestAnimationFrame(step);
-      } else {
-        approvalMeter.style.width = '99%';
-        approvalValue.textContent = '99%';
-      }
-    };
-
-    requestAnimationFrame(step);
+    confettiAnimationId = requestAnimationFrame(animate);
   }
 
   // ========== Optional Sound Effects (Web Audio API) ==========
@@ -247,26 +260,39 @@
 
   function playSuccessSound() {
     if (!audioContext) return;
+    try {
+      const times = [0, 0.1, 0.2];
+      const freqs = [523.25, 659.25, 783.99];
+      const t0 = audioContext.currentTime;
+      freqs.forEach((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.setValueAtTime(0.12, t0 + times[i]);
+        gain.gain.exponentialRampToValueAtTime(0.01, t0 + times[i] + 0.12);
+        osc.start(t0 + times[i]);
+        osc.stop(t0 + times[i] + 0.12);
+      });
+    } catch (e) {}
+  }
 
+  function playSadSound() {
+    if (!audioContext || prefersReducedMotion) return;
     try {
       const osc = audioContext.createOscillator();
       const gain = audioContext.createGain();
-
       osc.connect(gain);
       gain.connect(audioContext.destination);
-
-      osc.frequency.setValueAtTime(523.25, audioContext.currentTime);
-      osc.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1);
-      osc.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2);
-
-      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-
+      osc.frequency.setValueAtTime(200, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, audioContext.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
       osc.start(audioContext.currentTime);
-      osc.stop(audioContext.currentTime + 0.4);
-    } catch (e) {
-      // Silently fail if audio not supported
-    }
+      osc.stop(audioContext.currentTime + 0.25);
+    } catch (e) {}
   }
 
   // ========== Start ==========
