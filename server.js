@@ -52,16 +52,26 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    let body = data;
+    if (ext === '.html') {
+      const cacheBust = Date.now();
+      body = Buffer.from(
+        data.toString().replace(/\?b=\d+/g, '?b=' + cacheBust),
+        'utf8'
+      );
+    }
+
     const headers = {
       'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
     };
     if (ext === '.html') {
-      headers['Cache-Control'] = 'no-cache';
+      headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+      headers['Pragma'] = 'no-cache';
     } else {
       headers['Cache-Control'] = 'public, max-age=60';
     }
     res.writeHead(200, headers);
-    res.end(data);
+    res.end(body);
   });
 });
 
