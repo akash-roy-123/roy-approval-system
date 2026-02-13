@@ -22,11 +22,19 @@
         <p class="tagline">Est. Yesterday • Definitely Legitimate</p>
       </div>
     </div>
-    <div class="yes-counter-wrapper" aria-live="polite" aria-atomic="true">
-      <p class="yes-counter-label">YES COUNT</p>
-      <p class="yes-counter-value" id="yesCount">0</p>
-      <p class="yes-counter-sublabel">times you said Yes</p>
-      <button type="button" class="yes-counter-reset" id="resetYesCount" aria-label="Reset Yes count to zero">Reset</button>
+    <div class="counters">
+      <div class="yes-counter-wrapper" aria-live="polite" aria-atomic="true">
+        <p class="yes-counter-label">YES COUNT</p>
+        <p class="yes-counter-value" id="yesCount">0</p>
+        <p class="yes-counter-sublabel">times you said Yes</p>
+        <button type="button" class="yes-counter-reset" id="resetYesCount" aria-label="Reset Yes count to zero">Reset</button>
+      </div>
+      <div class="no-counter-wrapper" aria-live="polite" aria-atomic="true">
+        <p class="no-counter-label">NO COUNT</p>
+        <p class="no-counter-value" id="noCount">0</p>
+        <p class="no-counter-sublabel">times you said No</p>
+        <button type="button" class="no-counter-reset" id="resetNoCount" aria-label="Reset No count to zero">Reset</button>
+      </div>
     </div>
   </header>
 
@@ -43,6 +51,33 @@
         <button type="button" class="btn btn-no" id="noBtn" aria-label="No">
           No
         </button>
+      </div>
+
+      <div class="rating-bars" aria-label="Roy rating scales">
+        <div class="rating-bar-item rating-bar-annoyed">
+          <label for="annoyedBar" class="rating-bar-label">How much has Roy annoyed you?</label>
+          <div class="rating-bar-track-wrap">
+            <span class="rating-bar-min">0</span>
+            <div class="rating-bar-rail">
+              <div class="rating-bar-rail-fill" id="annoyedFill"></div>
+              <input type="range" id="annoyedBar" class="rating-bar range-annoyed" min="0" max="100" value="0" aria-valuetext="0 to infinity scale">
+            </div>
+            <span class="rating-bar-max">∞</span>
+          </div>
+        </div>
+        <div class="rating-bar-item rating-bar-entertaining">
+          <span class="rating-bar-label">How entertaining is Roy?</span>
+          <div class="rating-bar-track-wrap">
+            <span class="rating-bar-min">∞−1</span>
+            <div class="rating-bar entertaining-bar" role="img" aria-label="Maximum entertainment">
+              <div class="rating-bar-fill entertaining-fill"></div>
+              <span class="entertaining-badge">MAX</span>
+            </div>
+            <span class="rating-bar-max">∞</span>
+          </div>
+          <button type="button" class="rating-bar-btn entertaining-btn" id="entertainingBtn" aria-label="Confirm maximum entertainment">Obviously</button>
+        </div>
+        <p class="rating-bars-disclaimer" id="ratingDisclaimer">Data may or may not be used against Roy. No refunds.</p>
       </div>
     </section>
 

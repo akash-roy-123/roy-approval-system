@@ -25,6 +25,12 @@
   const confettiCanvas = document.getElementById('confettiCanvas');
   const yesCountEl = document.getElementById('yesCount');
   const resetYesCountBtn = document.getElementById('resetYesCount');
+  const noCountEl = document.getElementById('noCount');
+  const resetNoCountBtn = document.getElementById('resetNoCount');
+  const annoyedBar = document.getElementById('annoyedBar');
+  const annoyedFill = document.getElementById('annoyedFill');
+  const ratingDisclaimer = document.getElementById('ratingDisclaimer');
+  const entertainingBtn = document.getElementById('entertainingBtn');
 
   // ========== Storage key for persistent Yes count ==========
   const YES_COUNT_KEY = 'roy-review-yes-count';
@@ -62,6 +68,10 @@
     updateYesCounterDisplay();
   }
 
+  function resetNoCounter() {
+    if (noCountEl) noCountEl.textContent = '0';
+  }
+
   // Repeat Yes: messages after first full loop
   const SUCCESS_MESSAGES_REPEAT = [
     { title: 'Still Correct!', message: "Roy is still pleased. You're on a roll.", icon: '😌' },
@@ -88,7 +98,7 @@
     'Really sure?',
     'Last chance?',
     "This might hurt Roy's feelings...",
-    "Roy's mom will be sad.",
+    "Someone's going to be sad. (It's Roy.)",
     "The approval meter is watching.",
     "Okay but... why though?",
     "We could just pretend you meant Yes?",
@@ -114,9 +124,46 @@
 
     closeSuccessBtn.addEventListener('click', hideSuccessOverlay);
     if (resetYesCountBtn) resetYesCountBtn.addEventListener('click', resetYesCounter);
+    if (resetNoCountBtn) resetNoCountBtn.addEventListener('click', resetNoCounter);
 
     initAudio();
     updateYesCounterDisplay();
+    initRatingBars();
+  }
+
+  // ========== Rating bars (annoyed fill sync + humorous disclaimer) ==========
+  const DISCLAIMER_TEXTS = [
+    'Roy has been notified. He is not worried.',
+    'Data may or may not be used against Roy. No refunds.',
+    "Roy's lawyer has been CC'd. (He doesn't have one.)",
+    'This scale goes to ∞. Roy goes further.',
+    'Results are 100% scientific. Probably.',
+    "Roy believed in you. We hope you're proud of yourself.",
+  ];
+
+  function initRatingBars() {
+    if (!annoyedBar || !annoyedFill) return;
+    function syncAnnoyedFill() {
+      const val = Number(annoyedBar.value);
+      if (annoyedFill) annoyedFill.style.width = val + '%';
+      if (ratingDisclaimer) {
+        const i = Math.min(DISCLAIMER_TEXTS.length - 1, Math.floor((val / 100) * DISCLAIMER_TEXTS.length));
+        ratingDisclaimer.textContent = DISCLAIMER_TEXTS[i];
+      }
+    }
+    syncAnnoyedFill();
+    annoyedBar.addEventListener('input', syncAnnoyedFill);
+    if (entertainingBtn) {
+      entertainingBtn.addEventListener('click', function () {
+        const was = entertainingBtn.textContent;
+        entertainingBtn.textContent = 'Correct.';
+        entertainingBtn.disabled = true;
+        setTimeout(function () {
+          entertainingBtn.textContent = was;
+          entertainingBtn.disabled = false;
+        }, 1200);
+      });
+    }
   }
 
   // ========== YES Button Handler ==========
