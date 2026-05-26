@@ -613,6 +613,33 @@ body {
   box-shadow: var(--shadow-no), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+/* Main-page Yes/No buttons compose translate (runaway) + scale (shrink/grow)
+   via CSS custom properties driven from script.js. Scoped with :not(.btn-small)
+   so the modal Yes/No buttons keep their default behavior. */
+.btn-yes:not(.btn-small) {
+  transform: translate(var(--yes-x, 0), var(--yes-y, 0)) scale(var(--yes-scale, 1));
+}
+
+.btn-yes:not(.btn-small):hover {
+  transform: translate(var(--yes-x, 0), var(--yes-y, 0)) scale(calc(var(--yes-scale, 1) * 1.04));
+}
+
+.btn-yes:not(.btn-small):active {
+  transform: translate(var(--yes-x, 0), var(--yes-y, 0)) scale(calc(var(--yes-scale, 1) * 0.98));
+}
+
+.btn-no:not(.btn-small) {
+  transform: translate(var(--no-x, 0), var(--no-y, 0)) scale(var(--no-scale, 1));
+}
+
+.btn-no:not(.btn-small):hover {
+  transform: translate(var(--no-x, 0), var(--no-y, 0)) scale(calc(var(--no-scale, 1) * 1.04));
+}
+
+.btn-no:not(.btn-small):active {
+  transform: translate(var(--no-x, 0), var(--no-y, 0)) scale(calc(var(--no-scale, 1) * 0.98));
+}
+
 .btn-small {
   font-size: 0.95rem;
   padding: 0.65rem 1.35rem;
