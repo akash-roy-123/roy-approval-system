@@ -25,9 +25,6 @@
   const closeSuccessBtn = document.getElementById('closeSuccessBtn');
   const confettiCanvas = document.getElementById('confettiCanvas');
   const yesCountEl = document.getElementById('yesCount');
-  const resetYesCountBtn = document.getElementById('resetYesCount');
-  const noCountEl = document.getElementById('noCount');
-  const resetNoCountBtn = document.getElementById('resetNoCount');
   const annoyedBar = document.getElementById('annoyedBar');
   const annoyedFill = document.getElementById('annoyedFill');
   const ratingDisclaimer = document.getElementById('ratingDisclaimer');
@@ -67,18 +64,6 @@
 
   function updateYesCounterDisplay() {
     if (yesCountEl) yesCountEl.textContent = String(yesClickCount);
-  }
-
-  function resetYesCounter() {
-    yesClickCount = 0;
-    try {
-      localStorage.removeItem(YES_COUNT_KEY);
-    } catch (e) {}
-    updateYesCounterDisplay();
-  }
-
-  function resetNoCounter() {
-    if (noCountEl) noCountEl.textContent = '0';
   }
 
   // Repeat Yes: messages after first full loop
@@ -162,8 +147,6 @@
     confirmModal.addEventListener('cancel', (e) => e.preventDefault());
 
     closeSuccessBtn.addEventListener('click', hideSuccessOverlay);
-    if (resetYesCountBtn) resetYesCountBtn.addEventListener('click', resetYesCounter);
-    if (resetNoCountBtn) resetNoCountBtn.addEventListener('click', resetNoCounter);
 
     initAudio();
     updateYesCounterDisplay();
@@ -359,7 +342,7 @@
     const ctx = confettiCanvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
-    const colors = ['#2d9d8a', '#3dbda8', '#2e8b6e', '#b8923d', '#c45c5c'];
+    const colors = ['#059669', '#0d9488', '#d97706', '#e11d48', '#6ee7b7'];
     const particles = [];
     const particleCount = isMilestone ? 160 : 80;
     const emojiRatio = isMilestone ? 0.6 : 0.35;

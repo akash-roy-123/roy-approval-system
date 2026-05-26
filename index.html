@@ -9,7 +9,7 @@
   <meta name="description" content="Roy's Verdict: the definitive, totally legitimate system to determine if Roy is a good person.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?b=1">
 </head>
 <body>
@@ -29,13 +29,11 @@
         <p class="yes-counter-label">YES COUNT</p>
         <p class="yes-counter-value" id="yesCount">0</p>
         <p class="yes-counter-sublabel">times you said Yes</p>
-        <button type="button" class="yes-counter-reset" id="resetYesCount" aria-label="Reset Yes count to zero">Reset</button>
       </div>
       <div class="no-counter-wrapper" aria-live="polite" aria-atomic="true">
         <p class="no-counter-label">NO COUNT</p>
         <p class="no-counter-value" id="noCount">0</p>
-        <p class="no-counter-sublabel">times you said No</p>
-        <button type="button" class="no-counter-reset" id="resetNoCount" aria-label="Reset No count to zero">Reset</button>
+        <p class="no-counter-sublabel">(literally impossible)</p>
       </div>
     </div>
   </header>
@@ -44,7 +42,7 @@
     <!-- Hero section with the core question -->
     <section class="hero" aria-labelledby="main-question">
       <h2 id="main-question">The Big Question</h2>
-      <p class="question-text">Do you think Roy is a good person?</p>
+      <p class="question-text">Do you think Roy is a <em>good person</em>?</p>
 
       <div class="button-container" id="buttonContainer">
         <button type="button" class="btn btn-yes" id="yesBtn" aria-label="Yes, Roy is a good person">
