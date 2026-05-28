@@ -1,0 +1,176 @@
+# Roy's Verdict — Multi-stage CI pipeline
+#
+# Stage outcome rules (explicit):
+#   - If every step in a stage completes without error → that stage is SUCCEEDED.
+#   - If any step in a stage fails (non-zero exit, thrown error) → that stage is FAILED.
+#   - A failed stage blocks downstream stages that require success (needs + if: success()).
+#   - The final Report stage always runs and prints SUCCEEDED or FAILED per stage.
+
+name: Roy's Verdict Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1 — Setup: checkout repo and prepare Node.js
+  # Pass → job result: success (SUCCEEDED). Fail → job result: failure (FAILED).
+  # ---------------------------------------------------------------------------
+  stage-setup:
+    name: 'Stage 1 — Setup'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Mark stage as SUCCEEDED
+        if: success()
+        run: echo "::notice::Stage 1 (Setup) — SUCCEEDED (all steps passed)"
+
+      - name: Mark stage as FAILED
+        if: failure()
+        run: |
+          echo "::error::Stage 1 (Setup) — FAILED (a step did not pass)"
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Stage 2 — Validate: required files and JavaScript syntax
+  # Runs only if Stage 1 SUCCEEDED; otherwise skipped (treated as not run).
+  # ---------------------------------------------------------------------------
+  stage-validate:
+    name: 'Stage 2 — Validate'
+    runs-on: ubuntu-latest
+    needs: stage-setup
+    if: needs.stage-setup.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required static assets exist
+        run: |
+          set -e
+          for f in index.html styles.css script.js server.js package.json; do
+            test -f "$f" || { echo "Missing required file: $f"; exit 1; }
+          done
+          echo "All required files present"
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check script.js
+          node --check server.js
+
+      - name: Mark stage as SUCCEEDED
+        if: success()
+        run: echo "::notice::Stage 2 (Validate) — SUCCEEDED (all steps passed)"
+
+      - name: Mark stage as FAILED
+        if: failure()
+        run: |
+          echo "::error::Stage 2 (Validate) — FAILED (a step did not pass)"
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Stage 3 — Smoke test: start Node server and request the home page
+  # Runs only if Stage 2 SUCCEEDED.
+  # ---------------------------------------------------------------------------
+  stage-smoke-test:
+    name: 'Stage 3 — Smoke test'
+    runs-on: ubuntu-latest
+    needs: stage-validate
+    if: needs.stage-validate.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start server and verify HTTP 200
+        run: |
+          set -e
+          node server.js &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
+          sleep 2
+          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/
+          echo "Home page responded successfully"
+
+      - name: Mark stage as SUCCEEDED
+        if: success()
+        run: echo "::notice::Stage 3 (Smoke test) — SUCCEEDED (all steps passed)"
+
+      - name: Mark stage as FAILED
+        if: failure()
+        run: |
+          echo "::error::Stage 3 (Smoke test) — FAILED (a step did not pass)"
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Stage 4 — Report: always runs; maps each stage job result to SUCCEEDED/FAILED
+  # ---------------------------------------------------------------------------
+  stage-report:
+    name: 'Stage 4 — Report'
+    runs-on: ubuntu-latest
+    needs: [stage-setup, stage-validate, stage-smoke-test]
+    if: always()
+    steps:
+      - name: Report stage outcomes
+        env:
+          SETUP: ${{ needs.stage-setup.result }}
+          VALIDATE: ${{ needs.stage-validate.result }}
+          SMOKE: ${{ needs.stage-smoke-test.result }}
+        run: |
+          report() {
+            local name="$1"
+            local result="$2"
+            if [ "$result" = "success" ]; then
+              echo "$name: SUCCEEDED (stage passed)"
+            elif [ "$result" = "failure" ]; then
+              echo "$name: FAILED (stage did not pass)"
+            elif [ "$result" = "skipped" ]; then
+              echo "$name: SKIPPED (blocked by an earlier FAILED stage)"
+            else
+              echo "$name: FAILED (unknown result: $result)"
+            fi
+          }
+
+          echo "========== Pipeline stage summary =========="
+          report "Stage 1 — Setup"       "$SETUP"
+          report "Stage 2 — Validate"    "$VALIDATE"
+          report "Stage 3 — Smoke test"  "$SMOKE"
+          echo "============================================"
+
+          # Fail the pipeline if any stage that ran did not pass
+          failed=0
+          for result in "$SETUP" "$VALIDATE" "$SMOKE"; do
+            if [ "$result" = "failure" ]; then
+              failed=1
+            fi
+          done
+
+          if [ "$failed" -eq 1 ]; then
+            echo "::error::Pipeline FAILED — one or more stages did not pass"
+            exit 1
+          fi
+
+          echo "::notice::Pipeline SUCCEEDED — all executed stages passed"
+
+      - name: Mark stage as SUCCEEDED
+        if: success()
+        run: echo "::notice::Stage 4 (Report) — SUCCEEDED"
+
+      - name: Mark stage as FAILED
+        if: failure()
+        run: |
+          echo "::error::Stage 4 (Report) — FAILED"
+          exit 1
